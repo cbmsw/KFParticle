@@ -682,6 +682,11 @@ void KFParticleBaseSIMD::AddDaughterWithEnergyFit( const KFParticleBaseSIMD &Dau
     fChi2 += (mS[0]*zeta[0] + mS[1]*zeta[1] + mS[3]*zeta[2])*zeta[0]
       +      (mS[1]*zeta[0] + mS[2]*zeta[1] + mS[4]*zeta[2])*zeta[1]
       +      (mS[3]*zeta[0] + mS[4]*zeta[1] + mS[5]*zeta[2])*zeta[2];
+
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -913,6 +918,11 @@ void KFParticleBaseSIMD::AddDaughterWithEnergyFitMC( const KFParticleBaseSIMD &D
     fChi2 += (mS[0]*zeta[0] + mS[1]*zeta[1] + mS[3]*zeta[2])*zeta[0]
       +      (mS[1]*zeta[0] + mS[2]*zeta[1] + mS[4]*zeta[2])*zeta[1]
       +      (mS[3]*zeta[0] + mS[4]*zeta[1] + mS[5]*zeta[2])*zeta[2];
+
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -1045,6 +1055,11 @@ void KFParticleBaseSIMD::SubtractDaughter( const KFParticleBaseSIMD &Daughter )
     fChi2 += (mS[0]*zeta[0] + mS[1]*zeta[1] + mS[3]*zeta[2])*zeta[0]
       +      (mS[1]*zeta[0] + mS[2]*zeta[1] + mS[4]*zeta[2])*zeta[1]
       +      (mS[3]*zeta[0] + mS[4]*zeta[1] + mS[5]*zeta[2])*zeta[2];
+
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::SetProductionVertex( const KFParticleBaseSIMD &Vtx )
@@ -1188,6 +1203,10 @@ void KFParticleBaseSIMD::SetProductionVertex( const KFParticleBaseSIMD &Vtx )
         +  (mS[1]*res[0] + mS[2]*res[1] + mS[4]*res[2])*res[1]
         +  (mS[3]*res[0] + mS[4]*res[1] + mS[5]*res[2])*res[2];
   fNDF += 2;
+#ifdef KF_AccumulateChi2Upstream
+  // do not add vtx chi2 to the daughter track,
+  // we only accumulate the chi2 upstream
+#endif
    
   if( noS ){ 
     fP[7] = 0;
@@ -3736,6 +3755,11 @@ void KFParticleBaseSIMD::SubtractFromVertex(  KFParticleBaseSIMD &Vtx ) const
 
   Vtx.fNDF  -= 2;
   Vtx.fChi2 -= dChi2;
+
+#ifdef KF_AccumulateChi2Upstream
+    Vtx.fChi2 -= GetChi2();
+    Vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::SubtractFromParticle(  KFParticleBaseSIMD &Vtx ) const
@@ -3830,6 +3854,11 @@ void KFParticleBaseSIMD::SubtractFromParticle(  KFParticleBaseSIMD &Vtx ) const
   Vtx.fChi2 -= ((mS[0]*zeta[0] + mS[1]*zeta[1] + mS[3]*zeta[2])*zeta[0]
              +  (mS[1]*zeta[0] + mS[2]*zeta[1] + mS[4]*zeta[2])*zeta[1]
              +  (mS[3]*zeta[0] + mS[4]*zeta[1] + mS[5]*zeta[2])*zeta[2]);
+
+#ifdef KF_AccumulateChi2Upstream
+    Vtx.fChi2 -= GetChi2();
+    Vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::TransportLine( float_v dS, const float_v* dsdr, float_v P[], float_v C[], float_v* dsdr1, float_v* F, float_v* F1 ) const 

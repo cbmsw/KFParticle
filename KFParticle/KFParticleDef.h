@@ -35,6 +35,8 @@
 
 #define NInputSets 8
 
+#define KFUseTotalChi2
+
 #include <Vc/Vc>
 #include <Vc/version.h>
 #include <Vc/limits>
