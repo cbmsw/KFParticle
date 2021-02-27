@@ -51,7 +51,7 @@ class KFPTrackVector
   friend class KFParticleTopoReconstructor;
 
  public:
-  KFPTrackVector() : fId(), fPDG(), fQ(), fPVIndex(), fNPixelHits(), fNE(0), fNMu(0), fNPi(0), fNK(0), fNP(0), fND(0), fNT(0), fNHe3(0), fNHe4(0) {}
+  KFPTrackVector() : fId(), fPDG(), fQ(), fChi2(), fNDF(), fPVIndex(), fNPixelHits(), fNE(0), fNMu(0), fNPi(0), fNK(0), fNP(0), fND(0), fNT(0), fNHe3(0), fNHe4(0) {}
   virtual ~KFPTrackVector() {}
 
   /**Returns size of the vectors. All data vectors have the same size. */
@@ -61,7 +61,7 @@ class KFPTrackVector
     /**Returns size of the memory in floats (4 bytes or 32 bits) allocated by the current object. */
     const int& size = fP[0].size();
 
-    const int dataSize = size * 32
+    const int dataSize = size * 34
 #ifdef NonhomogeneousField
                          + size * 10
 #endif
@@ -96,6 +96,8 @@ class KFPTrackVector
   }                                                              ///< Returns constant reference to the vector with track Id KFPTrackVector::fId.
   const kfvector_int& PDG() const { return fPDG; }               ///< Returns constant reference to the vector with assigned PDG hypothesis KFPTrackVector::fPDG.
   const kfvector_int& Q() const { return fQ; }                   ///< Returns constant reference to the vector with charge KFPTrackVector::fQ.
+  const kfvector_float& Chi2() const { return fChi2; }           ///< Returns constant reference to the vector with chi2 KFPTrackVector::fChi2.
+  const kfvector_int& NDF() const { return fNDF; }               ///< Returns constant reference to the vector with NDF KFPTrackVector::fNDF.
   const kfvector_int& PVIndex() const { return fPVIndex; }       ///< Returns constant reference to the vector with indices of corresponding primary vertex KFPTrackVector::fPVIndex.
   const kfvector_int& NPixelHits() const { return fNPixelHits; } ///< Returns constant reference to the vector with the number of precise measurements KFPTrackVector::fNPixelHits.
 
@@ -121,6 +123,8 @@ class KFPTrackVector
   }                                                                    ///< Sets Id of the track with index "iTr".
   void SetPDG(int value, int iTr) { fPDG[iTr] = value; }               ///< Sets PDG hypothesis of the track with index "iTr".
   void SetQ(int value, int iTr) { fQ[iTr] = value; }                   ///< Sets charge of the track with index "iTr".
+  void SetChi2(float value, int iTr) { fChi2[iTr] = value; }           ///< Sets chi2 of the track with index "iTr".
+  void SetNDF(int value, int iTr) { fNDF[iTr] = value; }               ///< Sets NDF of the track with index "iTr".
   void SetPVIndex(int value, int iTr) { fPVIndex[iTr] = value; }       ///< Sets index of the corresponding primary vertex of the track with index "iTr".
   void SetNPixelHits(int value, int iTr) { fNPixelHits[iTr] = value; } ///< Sets number of precise measurement of the track with index "iTr".
   void SetLastElectron(int n) { fNE = n; }                             ///< Sets index of the last electron.
@@ -282,6 +286,16 @@ class KFPTrackVector
       fQ[n] = track.fQ[n];
     }
 
+    fChi2.resize(localSize);
+    for (int n = 0; n < localSize; n++) {
+      fChi2[n] = track.fChi2[n];
+    }
+
+    fNDF.resize(localSize);
+    for (int n = 0; n < localSize; n++) {
+      fNDF[n] = track.fNDF[n];
+    }
+
     fPVIndex.resize(localSize);
     for (int n = 0; n < localSize; n++) {
       fPVIndex[n] = track.fPVIndex[n];
@@ -325,19 +339,25 @@ class KFPTrackVector
       offset += Size();
     }
 
-    memcpy(&(data[offset]), &(fId[0]), Size() * sizeof(float));
+    memcpy(&(data[offset]), &(fId[0]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(data[offset]), &(fPDG[0]), Size() * sizeof(float));
+    memcpy(&(data[offset]), &(fPDG[0]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(data[offset]), &(fQ[0]), Size() * sizeof(float));
+    memcpy(&(data[offset]), &(fQ[0]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(data[offset]), &(fPVIndex[0]), Size() * sizeof(float));
+    memcpy(&(data[offset]), &(fChi2[0]), Size() * sizeof(float));
     offset += Size();
 
-    memcpy(&(data[offset]), &(fNPixelHits[0]), Size() * sizeof(float));
+    memcpy(&(data[offset]), &(fNDF[0]), Size() * sizeof(int));
+    offset += Size();
+
+    memcpy(&(data[offset]), &(fPVIndex[0]), Size() * sizeof(int));
+    offset += Size();
+
+    memcpy(&(data[offset]), &(fNPixelHits[0]), Size() * sizeof(int));
     offset += Size();
 
 #ifdef NonhomogeneousField
@@ -387,19 +407,25 @@ class KFPTrackVector
       offset += Size();
     }
 
-    memcpy(&(fId[0]), &(data[offset]), Size() * sizeof(float));
+    memcpy(&(fId[0]), &(data[offset]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(fPDG[0]), &(data[offset]), Size() * sizeof(float));
+    memcpy(&(fPDG[0]), &(data[offset]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(fQ[0]), &(data[offset]), Size() * sizeof(float));
+    memcpy(&(fQ[0]), &(data[offset]), Size() * sizeof(int));
     offset += Size();
 
-    memcpy(&(fPVIndex[0]), &(data[offset]), Size() * sizeof(float));
+    memcpy(&(fChi2[0]), &(data[offset]), Size() * sizeof(float));
     offset += Size();
 
-    memcpy(&(fNPixelHits[0]), &(data[offset]), Size() * sizeof(float));
+    memcpy(&(fNDF[0]), &(data[offset]), Size() * sizeof(int));
+    offset += Size();
+
+    memcpy(&(fPVIndex[0]), &(data[offset]), Size() * sizeof(int));
+    offset += Size();
+
+    memcpy(&(fNPixelHits[0]), &(data[offset]), Size() * sizeof(int));
     offset += Size();
 
 #ifdef NonhomogeneousField
@@ -443,6 +469,8 @@ class KFPTrackVector
   kfvector_int fId;         ///< Vector with the unique Id of tracks.
   kfvector_int fPDG;        ///< Vector with the PDG hypothesis.
   kfvector_int fQ;          ///< Vector with the charge of the tracks.
+  kfvector_float fChi2;     ///< Vector with the chi2 of the tracks.
+  kfvector_int fNDF;        ///< Vector with the NDF of the tracks.
   kfvector_int fPVIndex;    ///< Vector with the index of the corresponding primary vertex. If track is considered secondary "-1" is stored.
   kfvector_int fNPixelHits; ///< Vector with the number of hits from precise detectors (like MVD in CBM, HFT in STAR, ITS in ALICE, etc.)
 

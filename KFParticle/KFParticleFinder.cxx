@@ -1743,7 +1743,7 @@ void KFParticleFinder::ConstructTrackV0Cand(KFPTrackVector& vTracks,
         (abs(mother.PDG()[iv]) == 1003334) ||
         (abs(mother.PDG()[iv]) == 3001)) {
       mother_temp.CleanDaughtersId();
-      for (int iD = 0; iD < vV0[iv]->NDaughters(); iD++)
+      for (int iD = 0; iD < vV0[iv]->NDaughterIds(); iD++)
         mother_temp.AddDaughterId(vV0[iv]->DaughterIds()[iD]);
       mother_temp.AddDaughterId(trackId[iv]);
     }
@@ -2660,7 +2660,7 @@ void KFParticleFinder::CombinePartPart(vector<KFParticle>& particles1,
         // reset daughter ids for 3- and 4-particle decays
         if ((abs(mother.PDG()[iv]) == 428)) {
           mother_temp.CleanDaughtersId();
-          for (int iD = 0; iD < particles1[iP1].NDaughters(); iD++)
+          for (int iD = 0; iD < particles1[iP1].NDaughterIds(); iD++)
             mother_temp.AddDaughterId(particles1[iP1].DaughterIds()[iD]);
           mother_temp.AddDaughterId(tmpPart2[iv]->Id());
         }
@@ -2684,9 +2684,9 @@ void KFParticleFinder::CombinePartPart(vector<KFParticle>& particles1,
 
           if (MotherPDG == 428) {
             mother_temp.CleanDaughtersId();
-            for (int iD = 0; iD < tmpPart2[iv]->NDaughters(); iD++)
+            for (int iD = 0; iD < tmpPart2[iv]->NDaughterIds(); iD++)
               mother_temp.AddDaughterId(tmpPart2[iv]->DaughterIds()[iD]);
-            for (int iD = 0; iD < particles1[iP1].NDaughters(); iD++)
+            for (int iD = 0; iD < particles1[iP1].NDaughterIds(); iD++)
               mother_temp.AddDaughterId(particles1[iP1].DaughterIds()[iD]);
           }
 

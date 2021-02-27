@@ -46,7 +46,7 @@ KFParticle::KFParticle(const KFParticle& d1, const KFParticle& d2) : KFParticleB
   *this = mother;
 }
 
-void KFParticle::Create(const float Param[], const float Cov[], Int_t Charge, float mass)
+void KFParticle::Create(const float Param[], const float Cov[], Int_t Charge, float Chi2, int NDF, float mass)
 {
   /** Constructor from a "cartesian" track, mass hypothesis should be provided
    ** \param[in] Param[6] = { X, Y, Z, Px, Py, Pz } - position and momentum
@@ -67,10 +67,10 @@ void KFParticle::Create(const float Param[], const float Cov[], Int_t Charge, fl
     C[i] = Cov[i];
   }
 
-  KFParticleBase::Initialize(Param, C, Charge, mass);
+  KFParticleBase::Initialize(Param, C, Charge, Chi2, NDF, mass);
 }
 
-void KFParticle::Create(const Double_t Param[], const Double_t Cov[], Int_t Charge, float mass)
+void KFParticle::Create(const Double_t Param[], const Double_t Cov[], Int_t Charge, float Chi2, int NDF, float mass)
 {
   /** Constructor from a "cartesian" track, mass hypothesis should be provided
    ** \param[in] Param[6] = { X, Y, Z, Px, Py, Pz } - position and momentum
@@ -95,7 +95,7 @@ void KFParticle::Create(const Double_t Param[], const Double_t Cov[], Int_t Char
     C[i] = Cov[i];
   }
 
-  KFParticleBase::Initialize(P, C, Charge, mass);
+  KFParticleBase::Initialize(P, C, Charge, Chi2, NDF, mass);
 }
 
 KFParticle::KFParticle(const KFPTrack& track, const int PID) : KFParticleBase()
@@ -108,13 +108,13 @@ KFParticle::KFParticle(const KFPTrack& track, const int PID) : KFParticleBase()
   track.XvYvZv(fP);
   track.PxPyPz(fP + 3);
   fQ = track.Charge();
+  fChi2 = track.GetChi2();
+  fNDF = track.GetNDF();
   track.GetCovarianceXYZPxPyPz(fC);
 
   float mass = KFParticleDatabase::Instance()->GetMass(PID);
 
-  Create(fP, fC, fQ, mass);
-  fChi2 = track.GetChi2();
-  fNDF = track.GetNDF();
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
   SetPDG(PID);
 #ifdef NonhomogeneousField
   for (int iF = 0; iF < 10; iF++) {
@@ -134,6 +134,7 @@ KFParticle::KFParticle(const KFPVertex& vertex) : KFParticleBase()
   fChi2 = vertex.GetChi2();
   fNDF = vertex.GetNDF();
   fQ = 0;
+  fNDaughters = vertex.GetNContributors();
   fAtProductionVertex = 0;
   fSFromDecay = 0;
 }

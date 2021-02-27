@@ -119,6 +119,8 @@ class KFPInputData
       }
 
       int tmpInt;
+      float tmpFloat;
+
       for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
         ifile >> tmpInt;
         fTracks[iSet].SetId(tmpInt, iTr);
@@ -132,6 +134,16 @@ class KFPInputData
       for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
         ifile >> tmpInt;
         fTracks[iSet].SetQ(tmpInt, iTr);
+      }
+
+      for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
+        ifile >> tmpFloat;
+        fTracks[iSet].SetChi2(tmpFloat, iTr);
+      }
+
+      for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
+        ifile >> tmpInt;
+        fTracks[iSet].SetNDF(tmpInt, iTr);
       }
 
       for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {

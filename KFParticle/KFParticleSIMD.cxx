@@ -44,7 +44,7 @@ KFParticleSIMD::KFParticleSIMD(const KFParticleSIMD& d1, const KFParticleSIMD& d
   *this = mother;
 }
 
-void KFParticleSIMD::Create(const float_v Param[], const float_v Cov[], int_v Charge, float_v mass /*Int_t PID*/)
+void KFParticleSIMD::Create(const float_v Param[], const float_v Cov[], int_v Charge, float_v Chi2, int_v NDF, float_v mass /*Int_t PID*/)
 {
   /** Constructor from a "cartesian" track, mass hypothesis should be provided
    **
@@ -67,7 +67,7 @@ void KFParticleSIMD::Create(const float_v Param[], const float_v Cov[], int_v Ch
     C[i] = Cov[i];
   }
 
-  KFParticleBaseSIMD::Initialize(Param, C, Charge, mass);
+  KFParticleBaseSIMD::Initialize(Param, C, Charge, Chi2, NDF, mass);
 }
 
 KFParticleSIMD::KFParticleSIMD(const KFPTrack* track, Int_t PID) : KFParticleBaseSIMD()
@@ -94,6 +94,8 @@ KFParticleSIMD::KFParticleSIMD(const KFPTrack* track, Int_t PID) : KFParticleBas
       fP[i + 3][iPart] = r[i];
     }
     fQ[iPart] = track[iPart].Charge();
+    fChi2[iPart] = track[iPart].GetChi2();
+    fNDF[iPart] = track[iPart].GetNDF();
     track[iPart].GetCovarianceXYZPxPyPz(C);
     for (Int_t i = 0; i < 21; i++) {
       fC[i][iPart] = C[i];
@@ -101,12 +103,7 @@ KFParticleSIMD::KFParticleSIMD(const KFPTrack* track, Int_t PID) : KFParticleBas
   }
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(PID);
-  Create(fP, fC, fQ, mass);
-
-  for (Int_t iPart = 0; iPart < float_vLen; iPart++) {
-    fChi2[iPart] = track[iPart].GetChi2();
-    fNDF[iPart] = track[iPart].GetNDF();
-  }
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 KFParticleSIMD::KFParticleSIMD(KFPTrack& Track, const Int_t* pdg) : KFParticleBaseSIMD()
@@ -132,16 +129,15 @@ KFParticleSIMD::KFParticleSIMD(KFPTrack& Track, const Int_t* pdg) : KFParticleBa
     fP[i + 3] = r[i];
   }
   fQ = Track.Charge();
+  fChi2 = Track.GetChi2();
+  fNDF = Track.GetNDF();
   Track.GetCovarianceXYZPxPyPz(C);
   for (Int_t i = 0; i < 21; i++) {
     fC[i] = C[i];
   }
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(*pdg);
-  Create(fP, fC, fQ, mass);
-
-  fChi2 = Track.GetChi2();
-  fNDF = Track.GetNDF();
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 KFParticleSIMD::KFParticleSIMD(KFPTrackVector& track, int n, const Int_t* pdg) : KFParticleBaseSIMD()
@@ -169,9 +165,11 @@ KFParticleSIMD::KFParticleSIMD(KFPTrackVector& track, int n, const Int_t* pdg) :
   }
 #endif
   fQ = track.Q()[n];
+  fChi2 = track.Chi2()[n];
+  fNDF = track.NDF()[n];
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(*pdg);
-  Create(fP, fC, fQ, mass);
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 KFParticleSIMD::KFParticleSIMD(KFPTrack* Track[], int NTracks, const Int_t* pdg) : KFParticleBaseSIMD()
@@ -210,6 +208,8 @@ void KFParticleSIMD::Create(KFPTrack* Track[], int NTracks, const Int_t* pdg)
       fP[i + 3][iEntry] = r[i];
     }
     fQ[iEntry] = Track[iEntry]->Charge();
+    fChi2[iEntry] = Track[iEntry]->GetChi2();
+    fNDF[iEntry] = Track[iEntry]->GetNDF();
     Track[iEntry]->GetCovarianceXYZPxPyPz(C);
     for (Int_t i = 0; i < 21; i++) {
       fC[i][iEntry] = C[i];
@@ -217,13 +217,7 @@ void KFParticleSIMD::Create(KFPTrack* Track[], int NTracks, const Int_t* pdg)
   }
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(*pdg);
-  Create(fP, fC, fQ, mass);
-
-  for (Int_t iPart = 0; iPart < float_vLen; iPart++) {
-    Int_t iEntry = (iPart < NTracks) ? iPart : 0;
-    fChi2[iEntry] = Track[iEntry]->GetChi2();
-    fNDF[iEntry] = Track[iEntry]->GetNDF();
-  }
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 KFParticleSIMD::KFParticleSIMD(KFPTrackVector& track, uint_v& index, const int_v& pdg) : KFParticleBaseSIMD()
@@ -265,9 +259,11 @@ void KFParticleSIMD::Create(KFPTrackVector& track, uint_v& index, const int_v& p
 
   //   fPDG.gather(&(track.PDG()[0]), index);
   fQ.gather(&(track.Q()[0]), index);
+  fChi2.gather(&(track.Chi2()[0]), index);
+  fNDF.gather(&(track.NDF()[0]), index);
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(pdg);
-  Create(fP, fC, fQ, mass);
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 void KFParticleSIMD::Load(KFPTrackVector& track, int index, const int_v& pdg)
@@ -293,9 +289,11 @@ void KFParticleSIMD::Load(KFPTrackVector& track, int index, const int_v& pdg)
 
   //   fPDG.gather(&(track.PDG()[0]), index);
   fQ = reinterpret_cast<const int_v&>(track.Q()[index]);
+  fChi2 = reinterpret_cast<const float_v&>(track.Chi2()[index]);
+  fNDF = reinterpret_cast<const int_v&>(track.NDF()[index]);
 
   float_v mass = KFParticleDatabase::Instance()->GetMass(pdg);
-  Create(fP, fC, fQ, mass);
+  Create(fP, fC, fQ, fChi2, fNDF, mass);
 }
 
 void KFParticleSIMD::Rotate()
@@ -576,10 +574,10 @@ void KFParticleSIMD::SetOneEntry(int iEntry, KFParticleSIMD& part, int iEntryPar
   fPDG[iEntry] = part.GetPDG()[iEntryPart];
 
   if (iEntry == 0) {
-    fDaughterIds.resize(part.NDaughters(), int_v(-1));
+    fDaughterIds.resize(part.NDaughterIds(), int_v(-1));
   }
 
-  for (int iD = 0; iD < part.NDaughters(); iD++) {
+  for (int iD = 0; iD < part.NDaughterIds(); iD++) {
     fDaughterIds[iD][iEntry] = part.fDaughterIds[iD][iEntryPart];
   }
 
@@ -602,24 +600,24 @@ KFParticleSIMD::KFParticleSIMD(KFParticle* parts[], const int nPart) : KFParticl
   { // check
     bool ok = 1;
 
-    const int nD = (parts[0])->NDaughters();
+    const int nD = (parts[0])->NDaughterIds();
     for (int ie = 1; ie < nPart; ie++) {
       const KFParticle& part = *(parts[ie]);
-      ok &= part.NDaughters() == nD;
+      ok &= part.NDaughterIds() == nD;
     }
     if (!ok) {
       std::cout << " void CbmKFParticle_simd::Create(CbmKFParticle *parts[], int N) " << std::endl;
       exit(1);
     }
   }
-  fDaughterIds.resize((parts[0])->NDaughters(), int_v(-1));
+  fDaughterIds.resize((parts[0])->NDaughterIds(), int_v(-1));
 
   for (int iPart = 0; iPart < float_vLen; iPart++) {
     Int_t iEntry = (iPart < nPart) ? iPart : 0;
     KFParticle& part = *(parts[iEntry]);
 
     fId[iEntry] = part.Id();
-    for (int iD = 0; iD < part.NDaughters(); iD++) {
+    for (int iD = 0; iD < part.NDaughterIds(); iD++) {
       fDaughterIds[iD][iEntry] = part.DaughterIds()[iD];
     }
     fPDG[iEntry] = part.GetPDG();
@@ -657,8 +655,8 @@ KFParticleSIMD::KFParticleSIMD(KFParticle& part) : KFParticleBaseSIMD()
   fPDG = part.GetPDG();
   fAtProductionVertex = part.GetAtProductionVertex();
 
-  SetNDaughters(part.NDaughters());
-  for (int i = 0; i < part.NDaughters(); ++i) {
+  ReserveNDaughterIds(part.NDaughterIds());
+  for (int i = 0; i < part.NDaughterIds(); ++i) {
     fDaughterIds.push_back(part.DaughterIds()[i]);
   }
 

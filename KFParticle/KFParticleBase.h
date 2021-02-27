@@ -78,7 +78,7 @@ class KFParticleBase : public TObject
   KFParticleBase();
   virtual ~KFParticleBase() { ; } ///< The default destructor.
 
-  void Initialize(const float Param[], const float Cov[], Int_t Charge, float Mass);
+  void Initialize(const float Param[], const float Cov[], Int_t Charge, float Chi2, int NDF, float Mass);
   void Initialize();
 
   void SetConstructMethod(Int_t m) { fConstructMethod = m; }          ///< Defines the construction method for the current particle (see description of fConstructMethod).
@@ -92,17 +92,18 @@ class KFParticleBase : public TObject
 
   //* Simple accessors
 
-  float GetX() const { return fP[0]; }    ///< Retruns X coordinate of the particle, fP[0].
-  float GetY() const { return fP[1]; }    ///< Retruns Y coordinate of the particle, fP[1].
-  float GetZ() const { return fP[2]; }    ///< Retruns Z coordinate of the particle, fP[2].
-  float GetPx() const { return fP[3]; }   ///< Retruns X component of the momentum, fP[3].
-  float GetPy() const { return fP[4]; }   ///< Retruns Y component of the momentum, fP[4].
-  float GetPz() const { return fP[5]; }   ///< Retruns Z component of the momentum, fP[5].
-  float GetE() const { return fP[6]; }    ///< Returns energy of the particle, fP[6].
-  float GetS() const { return fP[7]; }    ///< Returns dS=l/p, l - decay length, fP[7], defined if production vertex is set.
-  char GetQ() const { return fQ; }        ///< Returns charge of the particle.
-  float GetChi2() const { return fChi2; } ///< Returns Chi2 of the fit.
-  Int_t GetNDF() const { return fNDF; }   ///< Returns number of decrease of freedom.
+  float GetX() const { return fP[0]; }                ///< Retruns X coordinate of the particle, fP[0].
+  float GetY() const { return fP[1]; }                ///< Retruns Y coordinate of the particle, fP[1].
+  float GetZ() const { return fP[2]; }                ///< Retruns Z coordinate of the particle, fP[2].
+  float GetPx() const { return fP[3]; }               ///< Retruns X component of the momentum, fP[3].
+  float GetPy() const { return fP[4]; }               ///< Retruns Y component of the momentum, fP[4].
+  float GetPz() const { return fP[5]; }               ///< Retruns Z component of the momentum, fP[5].
+  float GetE() const { return fP[6]; }                ///< Returns energy of the particle, fP[6].
+  float GetS() const { return fP[7]; }                ///< Returns dS=l/p, l - decay length, fP[7], defined if production vertex is set.
+  char GetQ() const { return fQ; }                    ///< Returns charge of the particle.
+  float GetChi2() const { return fChi2; }             ///< Returns Chi2 of the fit.
+  Int_t GetNDF() const { return fNDF; }               ///< Returns number of decrease of freedom.
+  Int_t GetNDaughters() const { return fNDaughters; } ///< Returns number of daughters
 
   const float& X() const { return fP[0]; }    ///< Retruns X coordinate of the particle, fP[0].
   const float& Y() const { return fP[1]; }    ///< Retruns Y coordinate of the particle, fP[1].
@@ -217,13 +218,13 @@ class KFParticleBase : public TObject
   static void GetArmenterosPodolanski(KFParticleBase& positive, KFParticleBase& negative, float QtAlfa[2]);
   void RotateXY(float angle, float Vtx[3]);
 
-  int Id() const { return fId; }                                        ///< Returns Id of the particle.
-  int NDaughters() const { return fDaughtersIds.size(); }               ///< Returns number of daughter particles.
-  const std::vector<int>& DaughterIds() const { return fDaughtersIds; } ///< Returns the vector with the indices of daughter particles.
-  void CleanDaughtersId() { fDaughtersIds.clear(); }                    ///< Cleans the vector with the indices of daughter particles.
+  int Id() const { return fId; }                                       ///< Returns Id of the particle.
+  int NDaughterIds() const { return fDaughterIds.size(); }             ///< Returns number of daughter particles.
+  const std::vector<int>& DaughterIds() const { return fDaughterIds; } ///< Returns the vector with the indices of daughter particles.
+  void CleanDaughtersId() { fDaughterIds.clear(); }                    ///< Cleans the vector with the indices of daughter particles.
 
-  void SetId(int id) { fId = id; }                            ///< Sets the Id of the particle. After the construction of a particle should be set by user.
-  void AddDaughterId(int id) { fDaughtersIds.push_back(id); } ///< Adds index of the daughter particle.
+  void SetId(int id) { fId = id; }                           ///< Sets the Id of the particle. After the construction of a particle should be set by user.
+  void AddDaughterId(int id) { fDaughterIds.push_back(id); } ///< Adds index of the daughter particle.
 
   void SetPDG(int pdg) { fPDG = pdg; } ///< Sets the PDG hypothesis.
   int GetPDG() const { return fPDG; }  ///< Returns the PDG hypothesis.
@@ -276,6 +277,7 @@ class KFParticleBase : public TObject
 #endif
   Bool_t fAtProductionVertex; ///< Flag shows if particle is at the production point.
   char fQ;                    ///< The charge of the particle in the units of the elementary charge.
+  char fNDaughters;           ///< The number of daughter particles
 
   /** \brief Determines the method for the particle construction. \n
    ** 0 - Energy considered as an independent veriable, fitted independently from momentum, without any constraints on mass \n
@@ -288,10 +290,10 @@ class KFParticleBase : public TObject
    ** 1) if particle is created from a track - the index of the track, in this case the size of the vector is always equal to one; \n
    ** 2) if particle is constructed from other particles - indices of these particles in the same array.
    **/
-  std::vector<int> fDaughtersIds;
+  std::vector<int> fDaughterIds;
 
 #ifndef KFParticleStandalone
-  ClassDef(KFParticleBase, 3)
+  ClassDef(KFParticleBase, 4)
 #endif
 };
 

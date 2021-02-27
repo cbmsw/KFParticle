@@ -217,6 +217,8 @@ void KFParticleTopoReconstructor::Init(AliHLTTPCCAGBTracker* tracker, vector<int
         fTracks[arrayIndex].SetId(iTr, iOTr);
         fTracks[arrayIndex].SetPDG(trackPDG, iOTr);
         fTracks[arrayIndex].SetQ(q, iOTr);
+        fTracks[arrayIndex].SetChi2(trParam.Chi2());
+        fTracks[arrayIndex].SetNDF(trParam.NDF());
         fTracks[arrayIndex].SetPVIndex(-1, iOTr);
       }
     }
@@ -296,6 +298,8 @@ void KFParticleTopoReconstructor::Init(vector<KFParticle>& particles, vector<int
     fTracks[0].SetId(particles[iTr].Id(), iTr);
     fTracks[0].SetPDG(trackPDG, iTr);
     fTracks[0].SetQ(particles[iTr].Q(), iTr);
+    fTracks[0].SetChi2(particles[iTr].Chi2(), iTr);
+    fTracks[0].SetNDF(particles[iTr].NDF(), iTr);
     fTracks[0].SetPVIndex(-1, iTr);
     fTracks[0].SetNPixelHits(npixelhits, iTr);
   }
@@ -703,8 +707,8 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
   //   {
   //     if(abs(fParticles[iParticle].GetPDG()) == 431 || abs(fParticles[iParticle].GetPDG()) == 4122)
   //     {
-  //       vector<int> daughterIds(fParticles[iParticle].NDaughters());
-  //       for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughters(); iDaughter++)
+  //       vector<int> daughterIds(fParticles[iParticle].NDaughterIds());
+  //       for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughterIds(); iDaughter++)
   //         daughterIds[iDaughter] = fParticles[fParticles[iParticle].DaughterIds()[iDaughter]].DaughterIds()[0];
   //       std::sort(daughterIds.begin(), daughterIds.end());
   //
@@ -712,8 +716,8 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
   //       {
   //         if(abs(fParticles[jParticle].GetPDG()) == 411)
   //         {
-  //           vector<int> daughterIdsDPlus(fParticles[jParticle].NDaughters());
-  //           for(int iDaughter=0; iDaughter<fParticles[jParticle].NDaughters(); iDaughter++)
+  //           vector<int> daughterIdsDPlus(fParticles[jParticle].NDaughterIds());
+  //           for(int iDaughter=0; iDaughter<fParticles[jParticle].NDaughterIds(); iDaughter++)
   //             daughterIdsDPlus[iDaughter] = fParticles[fParticles[jParticle].DaughterIds()[iDaughter]].DaughterIds()[0];
   //           std::sort(daughterIdsDPlus.begin(), daughterIdsDPlus.end());
   //
@@ -810,7 +814,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
   //     if(!(abs(fParticles[iParticle].GetPDG()) == 22)) continue;
   //
   //     bool bothDaughtersElectrons = 1;
-  //     for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughters(); iDaughter++)
+  //     for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughterIds(); iDaughter++)
   //     {
   //       const int daughterIndex = fParticles[iParticle].DaughterIds()[iDaughter];
   //       bothDaughtersElectrons &= abs(fParticles[daughterIndex].GetPDG()) == 11;
@@ -832,7 +836,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
     }
 
     //     bool bothDaughtersElectrons = 1;
-    //     for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughters(); iDaughter++)
+    //     for(int iDaughter=0; iDaughter<fParticles[iParticle].NDaughterIds(); iDaughter++)
     //     {
     //       const int daughterIndex = fParticles[iParticle].DaughterIds()[iDaughter];
     //       bothDaughtersElectrons &= abs(fParticles[daughterIndex].GetPDG()) == 11;
@@ -858,11 +862,11 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
       continue;
     }
     bool isStore = true;
-    for (int iDaughter = 0; iDaughter < fParticles[index].NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < fParticles[index].NDaughterIds(); iDaughter++) {
       isStore &= !(isUsed[fParticles[index].DaughterIds()[iDaughter]]);
     }
     if (isStore) {
-      for (int iDaughter = 0; iDaughter < fParticles[index].NDaughters(); iDaughter++) {
+      for (int iDaughter = 0; iDaughter < fParticles[index].NDaughterIds(); iDaughter++) {
         isUsed[fParticles[index].DaughterIds()[iDaughter]] = true;
       }
     } else {
@@ -879,7 +883,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
     }
 
     bool bothDaughtersElectrons = 1;
-    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughterIds(); iDaughter++) {
       const int daughterIndex = fParticles[iParticle].DaughterIds()[iDaughter];
       bothDaughtersElectrons &= abs(fParticles[daughterIndex].GetPDG()) == 11;
     }
@@ -893,7 +897,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
     //     if( (bothDaughtersElectrons && dm > 3.f) || !bothDaughtersElectrons)
     if (dm > 3.f) {
       bool isStore = true;
-      for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughters(); iDaughter++) {
+      for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughterIds(); iDaughter++) {
         isStore &= !(isUsed[fParticles[iParticle].DaughterIds()[iDaughter]]);
       }
       if (!isStore) {
@@ -909,7 +913,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
     }
 
     bool bothDaughtersElectrons = 1;
-    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughterIds(); iDaughter++) {
       const int daughterIndex = fParticles[iParticle].DaughterIds()[iDaughter];
       bothDaughtersElectrons &= abs(fParticles[daughterIndex].GetPDG()) == 11;
     }
@@ -919,7 +923,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
     }
 
     bool isStore = true;
-    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughterIds(); iDaughter++) {
       isStore &= !(isUsed[fParticles[iParticle].DaughterIds()[iDaughter]]);
     }
     if (!isStore) {
@@ -954,12 +958,12 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
   //     if(deleteCandidate[index]) continue;
   //
   //     bool isStore = true;
-  //     for(int iDaughter=0; iDaughter<fParticles[index].NDaughters(); iDaughter++)
+  //     for(int iDaughter=0; iDaughter<fParticles[index].NDaughterIds(); iDaughter++)
   //       isStore &= !(isUsed[ fParticles[index].DaughterIds()[iDaughter] ]);
   //
   //     if(isStore)
   //     {
-  //       for(int iDaughter=0; iDaughter<fParticles[index].NDaughters(); iDaughter++)
+  //       for(int iDaughter=0; iDaughter<fParticles[index].NDaughterIds(); iDaughter++)
   //         isUsed[ fParticles[index].DaughterIds()[iDaughter] ] = true;
   //     }
   //     else
@@ -971,7 +975,7 @@ void KFParticleTopoReconstructor::SelectParticleCandidates()
       continue;
     }
 
-    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < fParticles[iParticle].NDaughterIds(); iDaughter++) {
       if (bestMother[fParticles[iParticle].DaughterIds()[iDaughter]] != iParticle && bestMother[fParticles[iParticle].DaughterIds()[iDaughter]] > -1) {
         deleteCandidate[iParticle] = true;
         break;
@@ -992,7 +996,7 @@ bool KFParticleTopoReconstructor::ParticleHasRepeatingDaughters(const KFParticle
    ** with the same index including tracks from the daughter particles in the decay
    ** chains. Such candidates should be rejected.
    **/
-  if (particle.NDaughters() < 2) {
+  if (particle.NDaughterIds() < 2) {
     return 0;
   }
 
@@ -1016,10 +1020,10 @@ void KFParticleTopoReconstructor::GetListOfDaughterTracks(const KFParticle& part
    ** \param[in] particle - the particle to be processed
    ** \param[out] daughters - a vector with indices of all daughter tracks
    **/
-  if (particle.NDaughters() == 1) {
+  if (particle.NDaughterIds() == 1) {
     daughters.push_back(particle.DaughterIds()[0]);
   } else {
-    for (int iDaughter = 0; iDaughter < particle.NDaughters(); iDaughter++) {
+    for (int iDaughter = 0; iDaughter < particle.NDaughterIds(); iDaughter++) {
       GetListOfDaughterTracks(fParticles[particle.DaughterIds()[iDaughter]], daughters);
     }
   }
@@ -1184,6 +1188,16 @@ void KFParticleTopoReconstructor::SaveInputParticles(const string prefix, bool o
 
     for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
       out << fTracks[iSet].Q()[iTr] << " ";
+    }
+    out << std::endl;
+
+    for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
+      out << fTracks[iSet].Chi2()[iTr] << " ";
+    }
+    out << std::endl;
+
+    for (int iTr = 0; iTr < fTracks[iSet].Size(); iTr++) {
+      out << fTracks[iSet].NDF()[iTr] << " ";
     }
     out << std::endl;
 

@@ -24,7 +24,7 @@
 
 static const float_v small = 1.e-20f;
 
-KFParticleBaseSIMD::KFParticleBaseSIMD() : fQ(0), fNDF(-3), fChi2(0.f), fSFromDecay(0.f), SumDaughterMass(0.f), fMassHypo(-1.f), fId(-1), fAtProductionVertex(0), fPDG(0), fConstructMethod(0), fDaughterIds()
+KFParticleBaseSIMD::KFParticleBaseSIMD() : fQ(0), fNDF(-3), fChi2(0.f), fNDaughters(0), fSFromDecay(0.f), SumDaughterMass(0.f), fMassHypo(-1.f), fId(-1), fAtProductionVertex(0), fPDG(0), fConstructMethod(0), fDaughterIds()
 {
   /** The default constructor, initialises the parameters by: \n
    ** 1) all parameters are set to 0; \n
@@ -36,7 +36,7 @@ KFParticleBaseSIMD::KFParticleBaseSIMD() : fQ(0), fNDF(-3), fChi2(0.f), fSFromDe
   Initialize();
 }
 
-void KFParticleBaseSIMD::Initialize(const float_v Param[], const float_v Cov[], int_v Charge, float_v Mass)
+void KFParticleBaseSIMD::Initialize(const float_v Param[], const float_v Cov[], int_v Charge, float_v Chi2, int_v NDF, float_v Mass)
 {
   /** Sets the parameters of the particle:
    ** \param[in] Param[6] = { X, Y, Z, Px, Py, Pz } - position and momentum
@@ -64,8 +64,9 @@ void KFParticleBaseSIMD::Initialize(const float_v Param[], const float_v Cov[], 
   fP[6] = energy;
   fP[7] = 0;
   fQ = Charge;
-  fNDF = 0;
-  fChi2 = 0;
+  fNDF = NDF;
+  fChi2 = Chi2;
+  fNDaughters = 1;
   fAtProductionVertex = 0;
   fSFromDecay = 0;
 
@@ -109,6 +110,7 @@ void KFParticleBaseSIMD::Initialize()
   }
   fC[0] = fC[2] = fC[5] = 100.f;
   fC[35] = 1.f;
+  fNDaughters = 0;
   fNDF = -3;
   fChi2 = 0.f;
   fQ = 0;
@@ -373,7 +375,7 @@ void KFParticleBaseSIMD::GetMeasurement(const KFParticleBaseSIMD& daughter, floa
    ** \param[out] D[3][3] - the correlation matrix between the current and daughter particles
    **/
 
-  if (fNDF[0] == -1) {
+  if (fNDaughters[0] == 1) {
     float_v ds[2] = {0.f, 0.f};
     float_v dsdr[4][6];
     float_v F1[36], F2[36], F3[36], F4[36];
@@ -511,8 +513,14 @@ void KFParticleBaseSIMD::AddDaughter(const KFParticleBaseSIMD& Daughter)
 
   AddDaughterId(Daughter.Id());
 
-  if (int(fNDF[0]) < -1) { // first daughter -> just copy
+  if (fNDaughters[0] < 1) { // first daughter -> just copy
+    fNDaughters = 1;
     fNDF = -1;
+    fChi2 = 0.f;
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
     fQ = Daughter.GetQ();
     for (Int_t i = 0; i < 7; i++) {
       fP[i] = Daughter.fP[i];
@@ -674,10 +682,17 @@ void KFParticleBaseSIMD::AddDaughterWithEnergyFit(const KFParticleBaseSIMD& Daug
 
     //* Calculate Chi^2
 
+    fNDaughters++;
     fNDF += 2;
     fQ += Daughter.GetQ();
     fSFromDecay = 0;
-    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+             (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+             (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -942,10 +957,17 @@ void KFParticleBaseSIMD::AddDaughterWithEnergyFitMC(const KFParticleBaseSIMD& Da
 
     //* Calculate Chi^2
 
+    fNDaughters++;
     fNDF += 2;
     fQ += Daughter.GetQ();
     fSFromDecay = 0;
-    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+             (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+             (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -1085,10 +1107,17 @@ void KFParticleBaseSIMD::SubtractDaughter(const KFParticleBaseSIMD& Daughter)
 
   //* Calculate Chi^2
 
+  fNDaughters++;
   fNDF += 2;
   fQ -= Daughter.GetQ();
   fSFromDecay = 0;
-  fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+  fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+           (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+           (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+#ifdef KF_AccumulateChi2Upstream
+  fChi2 += Daughter.GetChi2();
+  fNDF += Daughter.GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::SetProductionVertex(const KFParticleBaseSIMD& Vtx)
@@ -1241,8 +1270,14 @@ void KFParticleBaseSIMD::SetProductionVertex(const KFParticleBaseSIMD& Vtx)
   fC[4] += M[1][2] + M[2][1];
   fC[5] += 2 * M[2][2];
 
-  fChi2 += (mS[0] * res[0] + mS[1] * res[1] + mS[3] * res[2]) * res[0] + (mS[1] * res[0] + mS[2] * res[1] + mS[4] * res[2]) * res[1] + (mS[3] * res[0] + mS[4] * res[1] + mS[5] * res[2]) * res[2];
+  fChi2 += (mS[0] * res[0] + mS[1] * res[1] + mS[3] * res[2]) * res[0] +
+           (mS[1] * res[0] + mS[2] * res[1] + mS[4] * res[2]) * res[1] +
+           (mS[3] * res[0] + mS[4] * res[1] + mS[5] * res[2]) * res[2];
   fNDF += 2;
+#ifdef KF_AccumulateChi2Upstream
+  // do not add vtx chi2 to the daughter track,
+  // we only accumulate the chi2 upstream
+#endif
 
   if (noS) {
     fP[7] = 0;
@@ -1519,8 +1554,8 @@ void KFParticleBaseSIMD::Construct(const KFParticleBaseSIMD* vDaughters[], Int_t
   const int maxIter = 1;
   for (Int_t iter = 0; iter < maxIter; iter++) {
 
-    CleanDaughtersId();
-    SetNDaughters(nDaughters);
+    CleanDaughterIds();
+    ReserveNDaughterIds(nDaughters);
 
     fAtProductionVertex = 0;
     fSFromDecay = float_v(Vc::Zero);
@@ -1530,7 +1565,7 @@ void KFParticleBaseSIMD::Construct(const KFParticleBaseSIMD* vDaughters[], Int_t
       fC[i] = 0.;
     }
     fC[35] = 1.;
-
+    fNDaughters = 0;
     fNDF = -3;
     fChi2 = 0.;
     fQ = 0;
@@ -3891,14 +3926,19 @@ void KFParticleBaseSIMD::SubtractFromVertex(KFParticleBaseSIMD& Vtx) const
 
   //* Calculate Chi^2
 
+  Vtx.fNDaughters--;
   Vtx.fNDF -= 2;
   Vtx.fChi2 -= dChi2;
+#ifdef KF_AccumulateChi2Upstream
+  Vtx.fChi2 -= GetChi2();
+  Vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::SubtractFromParticle(KFParticleBaseSIMD& Vtx) const
 {
   /** Subtract the current particle from another particle Vtx using the Kalman filter mathematics. 
-   ** The function is depricated and is kept for compatibility reasons. Should be replaced with SubtractDaughter().
+   ** The function is deprecated and is kept for compatibility reasons. Should be replaced with SubtractDaughter().
    ** \param[in] Vtx - particle from which the current particle should be subtracted
    **/
 
@@ -3997,10 +4037,18 @@ void KFParticleBaseSIMD::SubtractFromParticle(KFParticleBaseSIMD& Vtx) const
   }
 
   //* Calculate Chi^2
+
+  Vtx.fNDaughters--;
   Vtx.fNDF -= 2;
   Vtx.fQ -= GetQ();
   Vtx.fSFromDecay = 0;
-  Vtx.fChi2 -= ((mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2]);
+  Vtx.fChi2 -= ((mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+                (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+                (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2]);
+#ifdef KF_AccumulateChi2Upstream
+  Vtx.fChi2 -= GetChi2();
+  Vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBaseSIMD::TransportLine(float_v dS, const float_v* dsdr, float_v P[], float_v C[], float_v* dsdr1, float_v* F, float_v* F1) const
@@ -4341,6 +4389,3 @@ void KFParticleBaseSIMD::MultQSQt(const float_v Q[], const float_v S[], float_v 
     delete[] mA;
   }
 }
-
-// 72-charachters line to define the printer border
-//3456789012345678901234567890123456789012345678901234567890123456789012
