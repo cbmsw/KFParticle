@@ -150,5 +150,6 @@ void KFVertex::ConstructPrimaryVertex(const KFParticle* vDaughters[],
       vtxFlag[i] = 0;
     fNDF = -3;
     fChi2 = 0;
+    fNDaughters = 0;
   }
 }

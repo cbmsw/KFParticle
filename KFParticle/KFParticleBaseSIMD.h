@@ -115,7 +115,7 @@ class KFParticleBaseSIMD
 
   virtual ~KFParticleBaseSIMD() { ; } ///< The default destructor.
 
-  void Initialize(const float_v Param[], const float_v Cov[], int_v Charge, float_v Mass);
+  void Initialize(const float_v Param[], const float_v Cov[], int_v Charge, float_v Chi2, int_v NDF, float_v Mass);
   void Initialize();
 
   void SetConstructMethod(Int_t m) { fConstructMethod = m; }            ///< Defines the construction method for the current particle (see description of fConstructMethod).
@@ -129,17 +129,18 @@ class KFParticleBaseSIMD
 
   //* Simple accessors
 
-  float_v GetX() const { return fP[0]; }    ///< Returns the sum of masses of the daughters
-  float_v GetY() const { return fP[1]; }    ///< Returns the sum of masses of the daughters
-  float_v GetZ() const { return fP[2]; }    ///< Returns the sum of masses of the daughters
-  float_v GetPx() const { return fP[3]; }   ///< Returns the sum of masses of the daughters
-  float_v GetPy() const { return fP[4]; }   ///< Returns the sum of masses of the daughters
-  float_v GetPz() const { return fP[5]; }   ///< Returns the sum of masses of the daughters
-  float_v GetE() const { return fP[6]; }    ///< Returns the sum of masses of the daughters
-  float_v GetS() const { return fP[7]; }    ///< Returns the sum of masses of the daughters
-  int_v GetQ() const { return fQ; }         ///< Returns the sum of masses of the daughters
-  float_v GetChi2() const { return fChi2; } ///< Returns the sum of masses of the daughters
-  int_v GetNDF() const { return fNDF; }     ///< Returns the sum of masses of the daughters
+  float_v GetX() const { return fP[0]; }              ///< Retruns X coordinate of the particle, fP[0]
+  float_v GetY() const { return fP[1]; }              ///< Retruns Y coordinate of the particle, fP[1]
+  float_v GetZ() const { return fP[2]; }              ///< Retruns Z coordinate of the particle, fP[2]
+  float_v GetPx() const { return fP[3]; }             ///< Retruns X component of the momentum, fP[3]
+  float_v GetPy() const { return fP[4]; }             ///< Retruns Y component of the momentum, fP[4]
+  float_v GetPz() const { return fP[5]; }             ///< Retruns Z component of the momentum, fP[5]
+  float_v GetE() const { return fP[6]; }              ///< Returns energy of the particle, fP[6]
+  float_v GetS() const { return fP[7]; }              ///< Returns dS=l/p, l - decay length, fP[7], defined if production vertex is set
+  int_v GetQ() const { return fQ; }                   ///< Returns charge of the particle
+  float_v GetChi2() const { return fChi2; }           ///< Returns Chi2 of the fit
+  int_v GetNDF() const { return fNDF; }               ///< Returns number of degrees of freedom
+  int_v GetNDaughters() const { return fNDaughters; } ///< Returns number of daughters
 
   const float_v& X() const { return fP[0]; }    ///< Retruns X coordinate of the particle, fP[0].
   const float_v& Y() const { return fP[1]; }    ///< Retruns Y coordinate of the particle, fP[1].
@@ -151,7 +152,7 @@ class KFParticleBaseSIMD
   const float_v& S() const { return fP[7]; }    ///< Returns dS=l/p, l - decay length, fP[7], defined if production vertex is set.
   const int_v& Q() const { return fQ; }         ///< Returns charge of the particle.
   const float_v& Chi2() const { return fChi2; } ///< Returns Chi2 of the fit.
-  const int_v& NDF() const { return fNDF; }     ///< Returns number of decrease of freedom.
+  const int_v& NDF() const { return fNDF; }     ///< Returns number of degrees of freedom.
 
   float_v GetParameter(Int_t i) const { return fP[i]; }                  ///< Returns P[i] parameter.
   float_v GetCovariance(Int_t i) const { return fC[i]; }                 ///< Returns C[i] element of the covariance matrix in the lower triangular form.
@@ -184,7 +185,7 @@ class KFParticleBaseSIMD
   float_v& S() { return fP[7]; }    ///< Modifier of dS=l/p, l - decay length, fP[7], defined if production vertex is set.
   int_v& Q() { return fQ; }         ///< Modifier of charge of the particle.
   float_v& Chi2() { return fChi2; } ///< Modifier of Chi2 of the fit.
-  int_v& NDF() { return fNDF; }     ///< Modifier of number of decrease of freedom.
+  int_v& NDF() { return fNDF; }     ///< Modifier of number of degrees of freedom.
 
   float_v& Parameter(Int_t i) { return fP[i]; }                  ///< Modifier of P[i] parameter.
   float_v& Covariance(Int_t i) { return fC[i]; }                 ///< Modifier of C[i] element of the covariance matrix in the lower triangular form.
@@ -277,14 +278,14 @@ class KFParticleBaseSIMD
   void RotateXY(float_v angle, float_v Vtx[3]);
 
   int_v Id() const { return fId; }                               ///< Returns Id of the particle.
-  int NDaughters() const { return fDaughterIds.size(); }         ///< Returns number of daughter particles.
+  int NDaughterIds() const { return fDaughterIds.size(); }       ///< Returns number of daughter particles.
   std::vector<int_v>& DaughterIds() { return fDaughterIds; }     ///< Returns the vector with the indices of daughter particles.
   int_v GetDaughterId(int iD) const { return fDaughterIds[iD]; } ///< Returns the daughter Id with the index iD.
 
   void SetId(int_v id) { fId = id; }                           ///< Sets the Id of the particle. After the construction of a particle should be set by user.
-  void SetNDaughters(int n) { fDaughterIds.reserve(n); }       ///< Reserves the size of the vector with daughter Ids to n
+  void ReserveNDaughterIds(int n) { fDaughterIds.reserve(n); } ///< Reserves the size of the vector with daughter Ids to n
   void AddDaughterId(int_v id) { fDaughterIds.push_back(id); } ///< Adds index of the daughter particle.
-  void CleanDaughtersId() { fDaughterIds.clear(); }            ///< Cleans the vector with the indices of daughter particles.
+  void CleanDaughterIds() { fDaughterIds.clear(); }            ///< Cleans the vector with the indices of daughter particles.
 
   void SetPDG(int pdg) { fPDG = pdg; }         ///< Sets the PDG hypothesis common for all elements of the SIMD vector.
   void SetPDG(int_v& pdg) { fPDG = pdg; }      ///< Sets the PDG hypothesis individual for each entry of the SIMD vector.
@@ -319,6 +320,7 @@ class KFParticleBaseSIMD
   int_v fQ;                   ///< The charge of the particle in the units of the elementary charge.
   int_v fNDF;                 ///< Number of degrees of freedom.
   float_v fChi2;              ///< Chi^2.
+  int_v fNDaughters;          ///< The number of daughter particles
   float_v fSFromDecay;        ///< Distance from the decay vertex to the current position.
   float_v SumDaughterMass;    ///< Sum of the daughter particles masses. Needed to set the constraint on the minimum mass during particle construction.
   float_v fMassHypo;          ///< The mass hypothesis, used for the constraints during particle construction.

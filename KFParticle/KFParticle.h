@@ -82,8 +82,8 @@ class KFParticle : public KFParticleBase
   //* Initialisation from "cartesian" coordinates ( X Y Z Px Py Pz )
   //* Parameters, covariance matrix, charge and PID hypothesis should be provided
 
-  void Create(const float Param[], const float Cov[], Int_t Charge, float mass /*Int_t PID*/);
-  void Create(const Double_t Param[], const Double_t Cov[], Int_t Charge, float mass /*Int_t PID*/);
+  void Create(const float Param[], const float Cov[], Int_t Charge, float Chi2, int NDF, float mass /*Int_t PID*/);
+  void Create(const Double_t Param[], const Double_t Cov[], Int_t Charge, float Chi2, int NDF, float mass /*Int_t PID*/);
 
   //* Initialisation from ALICE track, PID hypothesis shoould be provided
 
@@ -502,7 +502,7 @@ inline float KFParticle::GetDecayLength() const
 inline float KFParticle::GetDecayLengthXY() const
 {
   float par, err;
-  return (KFParticleBase::GetDecayLengthXY(par, err)) ?: 0.f : par;
+  return (KFParticleBase::GetDecayLengthXY(par, err)) ? 0.f : par;
 }
 
 inline float KFParticle::GetLifeTime() const

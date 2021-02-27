@@ -106,7 +106,7 @@ class KFParticleSIMD : public KFParticleBaseSIMD
   //* Initialisation from "cartesian" coordinates ( X Y Z Px Py Pz )
   //* Parameters, covariance matrix, charge and PID hypothesis should be provided
 
-  void Create(const float_v Param[], const float_v Cov[], int_v Charge, float_v mass /*Int_t PID*/);
+  void Create(const float_v Param[], const float_v Cov[], int_v Charge, float_v Chi2, int_v NDF, float_v mass /*Int_t PID*/);
 
   void SetOneEntry(int iEntry, KFParticleSIMD& part, int iEntryPart);
 

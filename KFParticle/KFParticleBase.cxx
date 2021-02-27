@@ -33,7 +33,22 @@ ClassImp(KFParticleBase)
 #include "TRVector.h"
 #include <iostream>
 
-  KFParticleBase::KFParticleBase() : fChi2(0), fSFromDecay(0), SumDaughterMass(0), fMassHypo(-1), fNDF(-3), fId(-1), fParentID(0), fIdTruth(0), fQuality(0), fIdParentMcVx(0), fAtProductionVertex(0), fQ(0), fConstructMethod(0), fPDG(0), fDaughtersIds()
+  KFParticleBase::KFParticleBase() : fChi2(0),
+                                     fSFromDecay(0),
+                                     SumDaughterMass(0),
+                                     fMassHypo(-1),
+                                     fNDF(-3),
+                                     fId(-1),
+                                     fParentID(0),
+                                     fIdTruth(0),
+                                     fQuality(0),
+                                     fIdParentMcVx(0),
+                                     fAtProductionVertex(0),
+                                     fQ(0),
+                                     fNDaughters(0),
+                                     fConstructMethod(0),
+                                     fPDG(0),
+                                     fDaughterIds()
 {
   static Bool_t first = kTRUE;
   if (first) {
@@ -111,7 +126,7 @@ std::ostream& operator<<(std::ostream& os, const KFParticleBase& particle)
   if (particle.IdTruth()) {
     os << Form(" IdT:%4i/%3i", particle.IdTruth(), particle.QaTruth());
   }
-  int nd = particle.NDaughters();
+  int nd = particle.NDaughterIds();
   if (nd > 1) {
     os << " ND: " << nd << ":";
     if (nd > 3) {
@@ -129,7 +144,18 @@ std::ostream& operator<<(std::ostream& os, const KFParticleBase& particle)
 #endif
 
 #ifndef __ROOT__
-KFParticleBase::KFParticleBase() : fChi2(0), fSFromDecay(0), SumDaughterMass(0), fMassHypo(-1), fNDF(-3), fId(-1), fAtProductionVertex(0), fQ(0), fConstructMethod(0), fPDG(0), fDaughtersIds()
+KFParticleBase::KFParticleBase() : fChi2(0),
+                                   fSFromDecay(0),
+                                   SumDaughterMass(0),
+                                   fMassHypo(-1),
+                                   fNDF(-3),
+                                   fId(-1),
+                                   fAtProductionVertex(0),
+                                   fQ(0),
+                                   fNDaughters(0),
+                                   fConstructMethod(0),
+                                   fPDG(0),
+                                   fDaughterIds()
 {
   /** The default constructor, initialises the parameters by: \n
    ** 1) all parameters are set to 0; \n
@@ -142,7 +168,7 @@ KFParticleBase::KFParticleBase() : fChi2(0), fSFromDecay(0), SumDaughterMass(0),
 }
 #endif
 
-void KFParticleBase::Initialize(const float Param[], const float Cov[], Int_t Charge, float Mass)
+void KFParticleBase::Initialize(const float Param[], const float Cov[], Int_t Charge, float Chi2, int NDF, float Mass)
 {
   /** Sets the parameters of the particle:
    **
@@ -171,8 +197,9 @@ void KFParticleBase::Initialize(const float Param[], const float Cov[], Int_t Ch
   fP[6] = energy;
   fP[7] = 0;
   fQ = Charge;
-  fNDF = 0;
-  fChi2 = 0;
+  fNDF = NDF;
+  fChi2 = Chi2;
+  fNDaughters = 1;
   fAtProductionVertex = 0;
   fSFromDecay = 0;
 
@@ -218,6 +245,7 @@ void KFParticleBase::Initialize()
   fC[35] = 1.;
   fNDF = -3;
   fChi2 = 0.;
+  fNDaughters = 0;
   fQ = 0;
   fSFromDecay = 0;
   fAtProductionVertex = 0;
@@ -482,7 +510,7 @@ bool KFParticleBase::GetMeasurement(const KFParticleBase& daughter, float m[], f
    ** \param[out] D[3][3] - the correlation matrix between the current and daughter particles
    **/
 
-  if (fNDF == -1) {
+  if (fNDaughters == 1) {
     float ds[2] = {0.f, 0.f};
     float dsdr[4][6];
     float F1[36], F2[36], F3[36], F4[36];
@@ -639,8 +667,14 @@ void KFParticleBase::AddDaughter(const KFParticleBase& Daughter)
    ** \param[in] Daughter - the daughter particle
    **/
 
-  if (fNDF < -1) { // first daughter -> just copy
+  if (fNDaughters < 1) { // first daughter -> just copy
+    fNDaughters = 1;
     fNDF = -1;
+    fChi2 = 0.f;
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
     fQ = Daughter.GetQ();
     for (Int_t i = 0; i < 7; i++) {
       fP[i] = Daughter.fP[i];
@@ -815,10 +849,15 @@ void KFParticleBase::AddDaughterWithEnergyFit(const KFParticleBase& Daughter)
 
     //* Calculate Chi^2
 
+    fNDaughters++;
     fNDF += 2;
     fQ += Daughter.GetQ();
     fSFromDecay = 0;
     fChi2 += dChi2;
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -962,10 +1001,15 @@ void KFParticleBase::SubtractDaughter(const KFParticleBase& Daughter)
 
   //* Calculate Chi^2
 
+  fNDaughters++;
   fNDF += 2;
   fQ += Daughter.GetQ();
   fSFromDecay = 0;
   fChi2 += dChi2;
+#ifdef KF_AccumulateChi2Upstream
+  fChi2 += Daughter.GetChi2();
+  fNDF += Daughter.GetNDF();
+#endif
 }
 
 void KFParticleBase::AddDaughterWithEnergyFitMC(const KFParticleBase& Daughter)
@@ -1233,10 +1277,17 @@ void KFParticleBase::AddDaughterWithEnergyFitMC(const KFParticleBase& Daughter)
 
     //* Calculate Chi^2
 
+    fNDaughters++;
     fNDF += 2;
     fQ += Daughter.GetQ();
     fSFromDecay = 0;
-    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+    fChi2 += (mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+             (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+             (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2];
+#ifdef KF_AccumulateChi2Upstream
+    fChi2 += Daughter.GetChi2();
+    fNDF += Daughter.GetNDF();
+#endif
   }
 }
 
@@ -1389,8 +1440,14 @@ void KFParticleBase::SetProductionVertex(const KFParticleBase& Vtx)
   fC[4] += M[1][2] + M[2][1];
   fC[5] += 2 * M[2][2];
 
-  fChi2 += (mS[0] * res[0] + mS[1] * res[1] + mS[3] * res[2]) * res[0] + (mS[1] * res[0] + mS[2] * res[1] + mS[4] * res[2]) * res[1] + (mS[3] * res[0] + mS[4] * res[1] + mS[5] * res[2]) * res[2];
+  fChi2 += (mS[0] * res[0] + mS[1] * res[1] + mS[3] * res[2]) * res[0] +
+           (mS[1] * res[0] + mS[2] * res[1] + mS[4] * res[2]) * res[1] +
+           (mS[3] * res[0] + mS[4] * res[1] + mS[5] * res[2]) * res[2];
   fNDF += 2;
+#ifdef KF_AccumulateChi2Upstream
+  // do not add vtx chi2 to the daughter track,
+  // we only accumulate the chi2 upstream
+#endif
 
   if (noS) {
     fP[7] = 0;
@@ -1685,7 +1742,7 @@ void KFParticleBase::Construct(const KFParticleBase* vDaughters[], Int_t nDaught
     }
 
     fC[35] = 1.;
-
+    fNDaughters = 0;
     fNDF = -3;
     fChi2 = 0.;
     fQ = 0;
@@ -3221,14 +3278,19 @@ void KFParticleBase::SubtractFromVertex(KFParticleBase& Vtx) const
 
   //* Calculate Chi^2
 
+  Vtx.fNDaughters--;
   Vtx.fNDF -= 2;
   Vtx.fChi2 -= dChi2;
+#ifdef KF_AccumulateChi2Upstream
+  Vtx.fChi2 -= GetChi2();
+  Vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBase::SubtractFromParticle(KFParticleBase& Vtx) const
 {
   /** Subtract the current particle from another particle Vtx using the Kalman filter mathematics. 
-   ** The function is depricated and is kept for compatibility reasons. Should be replaced with SubtractDaughter().
+   ** The function is deprecated and is kept for compatibility reasons. Should be replaced with SubtractDaughter().
    ** \param[in] Vtx - particle from which the current particle should be subtracted
    **/
 
@@ -3327,10 +3389,18 @@ void KFParticleBase::SubtractFromParticle(KFParticleBase& Vtx) const
   }
 
   //* Calculate Chi^2
+
+  Vtx.fNDaughters--;
   Vtx.fNDF -= 2;
   Vtx.fQ -= GetQ();
   Vtx.fSFromDecay = 0;
-  Vtx.fChi2 -= ((mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] + (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] + (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2]);
+  Vtx.fChi2 -= ((mS[0] * zeta[0] + mS[1] * zeta[1] + mS[3] * zeta[2]) * zeta[0] +
+                (mS[1] * zeta[0] + mS[2] * zeta[1] + mS[4] * zeta[2]) * zeta[1] +
+                (mS[3] * zeta[0] + mS[4] * zeta[1] + mS[5] * zeta[2]) * zeta[2]);
+#ifdef KF_AccumulateChi2Upstream
+  vtx.fChi2 -= GetChi2();
+  vtx.fNDF -= GetNDF();
+#endif
 }
 
 void KFParticleBase::TransportLine(float dS, const float* dsdr, float P[], float C[], float* dsdr1, float* F, float* F1) const

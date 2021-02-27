@@ -663,7 +663,7 @@ void KFTopoPerformance::MatchParticles()
   for (unsigned int iRP = 0; iRP < fTopoReconstructor->GetParticles().size(); iRP++) {
     const KFParticle& rPart = fTopoReconstructor->GetParticles()[iRP];
 
-    if (rPart.NDaughters() != 1)
+    if (rPart.NDaughterIds() != 1)
       continue;
 
     const int rTrackId = rPart.DaughterIds()[0];
@@ -685,7 +685,7 @@ void KFTopoPerformance::MatchParticles()
   // match created mother particles
   for (unsigned int iRP = 0; iRP < fTopoReconstructor->GetParticles().size(); iRP++) {
     const KFParticle& rPart = fTopoReconstructor->GetParticles()[iRP];
-    const unsigned int NRDaughters = rPart.NDaughters();
+    const unsigned int NRDaughters = rPart.NDaughterIds();
 
     if (NRDaughters < 2)
       continue;
@@ -728,7 +728,7 @@ void KFTopoPerformance::MatchParticles()
                                    chargedDaughter.GetPDG() == fParteff.partDaughterPdg[iParticle][1];
 
         if (neutralDaughter.GetPDG() == rPart.GetPDG() &&
-            neutralDaughter.NDaughters() == rPart.NDaughters() &&
+            neutralDaughter.NDaughters() == rPart.NDaughterIds() &&
             allCorrectDaughters) {
           MCtoRParticleId[mcNeutralDaughterId].ids.push_back(iRP);
           RtoMCParticleId[iRP].ids.push_back(mcNeutralDaughterId);
@@ -786,7 +786,7 @@ void KFTopoPerformance::MatchParticles()
         KFMCParticle& mmPart = vMCParticles[mmId];
 
         if (mmPart.GetPDG() == rPart.GetPDG() &&
-            mmPart.NDaughters() == rPart.NDaughters()) {
+            mmPart.NDaughters() == rPart.NDaughterIds()) {
           MCtoRParticleId[mmId].ids.push_back(iRP);
           RtoMCParticleId[iRP].ids.push_back(mmId);
         } else {
@@ -1132,7 +1132,7 @@ void KFTopoPerformance::CalculatePVEfficiency()
     //    CbmKFParticle &rPart = fTopoReconstructor->GetParticles()[iRP];
     const KFParticle& rPart = fTopoReconstructor->GetParticles()[iRP];
 
-    if (rPart.NDaughters() != 1)
+    if (rPart.NDaughterIds() != 1)
       continue;
 
     nTracks++;
@@ -1336,7 +1336,7 @@ void KFTopoPerformance::FillParticleParameters(KFParticle& TempPart,
     histoParameters2D[0][iParticle][1]->Fill(Z, R, 1);
   }
 
-  if (TempPart.NDaughters() == 2 && IsCollectArmenteros(iParticle)) {
+  if (TempPart.NDaughterIds() == 2 && IsCollectArmenteros(iParticle)) {
     int index1 = TempPart.DaughterIds()[0];
     int index2 = TempPart.DaughterIds()[1];
     if (index1 >= int(fTopoReconstructor->GetParticles().size()) ||
@@ -1481,7 +1481,7 @@ void KFTopoPerformance::FillParticleParameters(KFParticle& TempPart,
     int mcDaughterId = -1;
     if (iParticle >= fParteff.fFirstStableParticleIndex && iParticle <= fParteff.fLastStableParticleIndex)
       mcDaughterId = iMCTrack;
-    else if (mcTrack.PDG() == 22 && TempPart.NDaughters() == 1)
+    else if (mcTrack.PDG() == 22 && TempPart.NDaughterIds() == 1)
       mcDaughterId = iMCTrack;
     else if (iParticle >= fParteff.fFirstMissingMassParticleIndex && iParticle <= fParteff.fLastMissingMassParticleIndex)
       mcDaughterId = mcPart.GetDaughterIds()[1]; //the charged daughter
@@ -1948,7 +1948,7 @@ void KFTopoPerformance::FillHistos()
   //fill histograms with quality of input tracks from PV
   for (unsigned int iP = 0; iP < fTopoReconstructor->GetParticles().size(); iP++) {
     KFParticle TempPart = fTopoReconstructor->GetParticles()[iP];
-    int nDaughters = TempPart.NDaughters();
+    int nDaughters = TempPart.NDaughterIds();
     if (nDaughters > 1)
       continue; //use only tracks, not short lived particles
 

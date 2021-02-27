@@ -43,7 +43,7 @@ class KFVertex : public KFParticle
   KFVertex(const KFPVertex& vertex);
   virtual ~KFVertex() {}
 
-  Int_t GetNContributors() const { return fIsConstrained ? fNDF / 2 : (fNDF + 3) / 2; } ///< Returns number of particles used for construction of the vertex.
+  Int_t GetNContributors() const { return fIsConstrained ? fNDaughters - 1 : fNDaughters; } ///< Returns number of particles used for construction of the vertex.
 
   void operator+=(const KFParticle& Daughter);          ///< Adds particle to a vertex.
   KFVertex operator-(const KFParticle& Daughter) const; ///< Subtracts particle from a vertex, returns temporary object. Initial vertex stays untouched.
