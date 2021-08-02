@@ -502,7 +502,7 @@ inline float KFParticle::GetDecayLength() const
 inline float KFParticle::GetDecayLengthXY() const
 {
   float par, err;
-  return (KFParticleBase::GetDecayLengthXY(par, err)) ?: 0.f : par;
+  return (KFParticleBase::GetDecayLengthXY(par, err)) ? 0.f : par;
 }
 
 inline float KFParticle::GetLifeTime() const
