@@ -106,12 +106,12 @@ class KFParticleFieldRegion
     return B;
   }
 
-  void Set(const KFParticleFieldValue& B0, const float_v B0z,
+  void Set(const KFParticleFieldValue& _B0, const float_v B0z,
            const KFParticleFieldValue& B1, const float_v B1z,
            const KFParticleFieldValue& B2, const float_v B2z)
   {
     /** Approximates the magnetic field with the parabolas using three points along the particle trajectory.
-     ** \param[in] B0 - magnetic field vector at the first point
+     ** \param[in] _B0 - magnetic field vector at the first point
      ** \param[in] B0z - Z position of the first point
      ** \param[in] B1 - magnetic field vector at the second point
      ** \param[in] B1z - Z position of the second point
@@ -126,42 +126,42 @@ class KFParticleFieldRegion
     float_v w11 = -dz2 * w21;
     float_v w12 = -dz1 * w22;
 
-    float_v dB1 = B1.x - B0.x;
-    float_v dB2 = B2.x - B0.x;
-    fField[0] = B0.x;
+    float_v dB1 = B1.x - _B0.x;
+    float_v dB2 = B2.x - _B0.x;
+    fField[0] = _B0.x;
     fField[1] = dB1 * w11 + dB2 * w12;
     fField[2] = dB1 * w21 + dB2 * w22;
 
-    dB1 = B1.y - B0.y;
-    dB2 = B2.y - B0.y;
-    fField[3] = B0.y;
+    dB1 = B1.y - _B0.y;
+    dB2 = B2.y - _B0.y;
+    fField[3] = _B0.y;
     fField[4] = dB1 * w11 + dB2 * w12;
     fField[5] = dB1 * w21 + dB2 * w22;
 
-    dB1 = B1.z - B0.z;
-    dB2 = B2.z - B0.z;
-    fField[6] = B0.z;
+    dB1 = B1.z - _B0.z;
+    dB2 = B2.z - _B0.z;
+    fField[6] = _B0.z;
     fField[7] = dB1 * w11 + dB2 * w12;
     fField[8] = dB1 * w21 + dB2 * w22;
   }
 
-  void Set(const KFParticleFieldValue& B0, const float_v B0z,
+  void Set(const KFParticleFieldValue& _B0, const float_v B0z,
            const KFParticleFieldValue& B1, const float_v B1z)
   {
     /** Approximates the magnetic field with the strainght line using two points.
-     ** \param[in] B0 - magnetic field vector at the first point
+     ** \param[in] _B0 - magnetic field vector at the first point
      ** \param[in] B0z - Z position of the first point
      ** \param[in] B1 - magnetic field vector at the second point
      ** \param[in] B1z - Z position of the second point
      **/
     fField[9] = B0z;
     float_v dzi = 1.f / (float_v(B1z - B0z));
-    fField[0] = B0.x;
-    fField[3] = B0.y;
-    fField[6] = B0.z;
-    fField[1] = (B1.x - B0.x) * dzi;
-    fField[4] = (B1.y - B0.y) * dzi;
-    fField[7] = (B1.z - B0.z) * dzi;
+    fField[0] = _B0.x;
+    fField[3] = _B0.y;
+    fField[6] = _B0.z;
+    fField[1] = (B1.x - _B0.x) * dzi;
+    fField[4] = (B1.y - _B0.y) * dzi;
+    fField[7] = (B1.z - _B0.z) * dzi;
     fField[2] = fField[5] = fField[8] = 0.f;
   }
 
