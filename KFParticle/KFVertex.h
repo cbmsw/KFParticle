@@ -53,6 +53,8 @@ class KFVertex : public KFParticle
                          float ErrX, float ErrY, float ErrZ);
   void SetBeamConstraintOff();
 
+  bool IsConstrainedToBeam() const { return fIsConstrained; }
+
   void ConstructPrimaryVertex(const KFParticle* vDaughters[], int nDaughters,
                               Bool_t vtxFlag[], float ChiCut = 3.5);
 
