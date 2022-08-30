@@ -26,6 +26,7 @@
 #include "assert.h"
 
 #include <vector>
+#include <array>
 
 class KFParticle;
 class KFPTrackVector;
@@ -86,10 +87,12 @@ class KFParticlePVReconstructor
 
   /** \brief Sets cut fChi2Cut on chi2-deviation of primary tracks from the vertex candidate to "chi2"
    ** and a soft preparation cut fChi2CutPreparation to "10*chi2". */
-  void SetChi2PrimaryCut(float chi2)
+
+  void SetChi2PrimaryCut(float chi2) { fChi2Cut = chi2; fChi2CutPreparation = chi2*5; }
+  
+  void SetTargetPosition(const std::array<float, 3> &target)
   {
-    fChi2Cut = chi2;
-    fChi2CutPreparation = chi2 * 5;
+    fTarget = target;
   }
 
  private:
@@ -105,6 +108,8 @@ class KFParticlePVReconstructor
 
   KFParticle fBeamLine; ///< Position and direction of the beam line.
   bool fIsBeamLine;     ///< Flag showing if the beam line is set.
+
+  std::array<float, 3> fTarget = {0.f};
 
   /** @class KFParticleCluster
    ** @brief A helper structure for reconstruction of a primary vertex.
