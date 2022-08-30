@@ -59,7 +59,9 @@ void KFParticlePVReconstructor::Init(KFPTrackVector* tracks, int nParticles)
     tracks->GetTrack(track, iTr);
     fParticles[iTr] = KFParticle(track, 211);
     fParticles[iTr].AddDaughterId(track.Id());
+    
     float zeroPoint[3]{fTarget[0], fTarget[1], fTarget[2]};
+    
     fParticles[iTr].TransportToPoint(zeroPoint);
 
     for (int iC = 0; iC < 3; iC++) {
