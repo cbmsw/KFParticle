@@ -209,6 +209,7 @@ class KFParticleTopoReconstructor
 
   void SetBeamLine(KFParticle& p) { fKFParticlePVReconstructor->SetBeamLine(p); } ///< Sets the beam line for precise reconstruction of the primary vertex.
   void SetTarget(const std::array<float, 3> &target) { fKFParticlePVReconstructor->SetTargetPosition(target); } ///< Sets the target position for reconstruction of the primary vertex.
+  const std::array<float, 3> GetTargetPosition() { return fKFParticlePVReconstructor->GetTargetPosition(); }
 #ifdef HomogeneousField
   void SetField(double b);
 #endif
