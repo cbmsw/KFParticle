@@ -81,6 +81,7 @@ class KFParticlePVReconstructor{
   {
     fTarget = target;
   }
+  const std::array<float, 3> GetTargetPosition(){return fTarget;}
   
  private:
   KFParticlePVReconstructor &operator=(KFParticlePVReconstructor &); ///< Is not defined. Deny copying of the objects of this class.
