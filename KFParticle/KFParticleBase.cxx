@@ -1343,6 +1343,161 @@ void KFParticleBase::SetProductionVertex( const KFParticleBase &Vtx )
   fAtProductionVertex = 1;
 }
 
+void KFParticleBase::SetExactProductionVertex( const KFParticleBase &Vtx )
+{
+  //* Set production vertex for the particle, when the particle was not used in the vertex fit
+
+  const float *m = Vtx.fP, *mV = Vtx.fC;
+
+  Bool_t noS = ( fC[35]<=0 ); // no decay length allowed
+
+  if( noS ){ 
+    TransportToDecayVertex();
+    fP[7] = 0;
+    fC[28] = fC[29] = fC[30] = fC[31] = fC[32] = fC[33] = fC[34] = fC[35] = 0;
+  } else {
+    float dsdr[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    TransportToDS( GetDStoPoint( m, dsdr ), dsdr );
+    fP[7] = -fSFromDecay;
+    fC[28] = fC[29] = fC[30] = fC[31] = fC[32] = fC[33] = fC[34] = 0;
+    fC[35] = 0.1;
+
+    Convert(1);
+  }
+
+  float mAi[6];
+
+  for(int i=0; i<6; i++) mAi[i] = fC[i];
+  InvertCholetsky3(mAi);
+
+  float mB[5][3];
+
+  mB[0][0] = fC[ 6]*mAi[0] + fC[ 7]*mAi[1] + fC[ 8]*mAi[3];
+  mB[0][1] = fC[ 6]*mAi[1] + fC[ 7]*mAi[2] + fC[ 8]*mAi[4];
+  mB[0][2] = fC[ 6]*mAi[3] + fC[ 7]*mAi[4] + fC[ 8]*mAi[5];
+
+  mB[1][0] = fC[10]*mAi[0] + fC[11]*mAi[1] + fC[12]*mAi[3];
+  mB[1][1] = fC[10]*mAi[1] + fC[11]*mAi[2] + fC[12]*mAi[4];
+  mB[1][2] = fC[10]*mAi[3] + fC[11]*mAi[4] + fC[12]*mAi[5];
+
+  mB[2][0] = fC[15]*mAi[0] + fC[16]*mAi[1] + fC[17]*mAi[3];
+  mB[2][1] = fC[15]*mAi[1] + fC[16]*mAi[2] + fC[17]*mAi[4];
+  mB[2][2] = fC[15]*mAi[3] + fC[16]*mAi[4] + fC[17]*mAi[5];
+
+  mB[3][0] = fC[21]*mAi[0] + fC[22]*mAi[1] + fC[23]*mAi[3];
+  mB[3][1] = fC[21]*mAi[1] + fC[22]*mAi[2] + fC[23]*mAi[4];
+  mB[3][2] = fC[21]*mAi[3] + fC[22]*mAi[4] + fC[23]*mAi[5];
+
+  mB[4][0] = fC[28]*mAi[0] + fC[29]*mAi[1] + fC[30]*mAi[3];
+  mB[4][1] = fC[28]*mAi[1] + fC[29]*mAi[2] + fC[30]*mAi[4];
+  mB[4][2] = fC[28]*mAi[3] + fC[29]*mAi[4] + fC[30]*mAi[5];
+
+  float z[3] = { m[0]-fP[0], m[1]-fP[1], m[2]-fP[2] };
+
+  {
+    float mAVi[6] = { fC[0]-mV[0], fC[1]-mV[1], fC[2]-mV[2], 
+                        fC[3]-mV[3], fC[4]-mV[4], fC[5]-mV[5] };
+    
+    InvertCholetsky3( mAVi);
+    {
+
+      float dChi2 = ( +(mAVi[0]*z[0] + mAVi[1]*z[1] + mAVi[3]*z[2])*z[0]
+                      +(mAVi[1]*z[0] + mAVi[2]*z[1] + mAVi[4]*z[2])*z[1]
+                      +(mAVi[3]*z[0] + mAVi[4]*z[1] + mAVi[5]*z[2])*z[2] );
+      
+      // Take Abs(dChi2) here. Negative value of 'det' or 'dChi2' shows that the particle 
+      // was not used in the production vertex fit
+      
+      fChi2+= fabs( dChi2 );
+    }
+    fNDF  += 2;
+  }
+  
+  fP[0] = m[0];
+  fP[1] = m[1];
+  fP[2] = m[2];
+  fP[3]+= mB[0][0]*z[0] + mB[0][1]*z[1] + mB[0][2]*z[2];
+  fP[4]+= mB[1][0]*z[0] + mB[1][1]*z[1] + mB[1][2]*z[2];
+  fP[5]+= mB[2][0]*z[0] + mB[2][1]*z[1] + mB[2][2]*z[2];
+  fP[6]+= mB[3][0]*z[0] + mB[3][1]*z[1] + mB[3][2]*z[2];
+  fP[7]+= mB[4][0]*z[0] + mB[4][1]*z[1] + mB[4][2]*z[2];
+  
+  float d0, d1, d2;
+
+  fC[0] = mV[0];
+  fC[1] = mV[1];
+  fC[2] = mV[2];
+  fC[3] = mV[3];
+  fC[4] = mV[4];
+  fC[5] = mV[5];
+
+  d0= mB[0][0]*mV[0] + mB[0][1]*mV[1] + mB[0][2]*mV[3] - fC[ 6];
+  d1= mB[0][0]*mV[1] + mB[0][1]*mV[2] + mB[0][2]*mV[4] - fC[ 7];
+  d2= mB[0][0]*mV[3] + mB[0][1]*mV[4] + mB[0][2]*mV[5] - fC[ 8];
+
+  fC[ 6]+= d0;
+  fC[ 7]+= d1;
+  fC[ 8]+= d2;
+  fC[ 9]+= d0*mB[0][0] + d1*mB[0][1] + d2*mB[0][2];
+
+  d0= mB[1][0]*mV[0] + mB[1][1]*mV[1] + mB[1][2]*mV[3] - fC[10];
+  d1= mB[1][0]*mV[1] + mB[1][1]*mV[2] + mB[1][2]*mV[4] - fC[11];
+  d2= mB[1][0]*mV[3] + mB[1][1]*mV[4] + mB[1][2]*mV[5] - fC[12];
+
+  fC[10]+= d0;
+  fC[11]+= d1;
+  fC[12]+= d2;
+  fC[13]+= d0*mB[0][0] + d1*mB[0][1] + d2*mB[0][2];
+  fC[14]+= d0*mB[1][0] + d1*mB[1][1] + d2*mB[1][2];
+
+  d0= mB[2][0]*mV[0] + mB[2][1]*mV[1] + mB[2][2]*mV[3] - fC[15];
+  d1= mB[2][0]*mV[1] + mB[2][1]*mV[2] + mB[2][2]*mV[4] - fC[16];
+  d2= mB[2][0]*mV[3] + mB[2][1]*mV[4] + mB[2][2]*mV[5] - fC[17];
+
+  fC[15]+= d0;
+  fC[16]+= d1;
+  fC[17]+= d2;
+  fC[18]+= d0*mB[0][0] + d1*mB[0][1] + d2*mB[0][2];
+  fC[19]+= d0*mB[1][0] + d1*mB[1][1] + d2*mB[1][2];
+  fC[20]+= d0*mB[2][0] + d1*mB[2][1] + d2*mB[2][2];
+
+  d0= mB[3][0]*mV[0] + mB[3][1]*mV[1] + mB[3][2]*mV[3] - fC[21];
+  d1= mB[3][0]*mV[1] + mB[3][1]*mV[2] + mB[3][2]*mV[4] - fC[22];
+  d2= mB[3][0]*mV[3] + mB[3][1]*mV[4] + mB[3][2]*mV[5] - fC[23];
+
+  fC[21]+= d0;
+  fC[22]+= d1;
+  fC[23]+= d2;
+  fC[24]+= d0*mB[0][0] + d1*mB[0][1] + d2*mB[0][2];
+  fC[25]+= d0*mB[1][0] + d1*mB[1][1] + d2*mB[1][2];
+  fC[26]+= d0*mB[2][0] + d1*mB[2][1] + d2*mB[2][2];
+  fC[27]+= d0*mB[3][0] + d1*mB[3][1] + d2*mB[3][2];
+
+  d0= mB[4][0]*mV[0] + mB[4][1]*mV[1] + mB[4][2]*mV[3] - fC[28];
+  d1= mB[4][0]*mV[1] + mB[4][1]*mV[2] + mB[4][2]*mV[4] - fC[29];
+  d2= mB[4][0]*mV[3] + mB[4][1]*mV[4] + mB[4][2]*mV[5] - fC[30];
+
+  fC[28]+= d0;
+  fC[29]+= d1;
+  fC[30]+= d2;
+  fC[31]+= d0*mB[0][0] + d1*mB[0][1] + d2*mB[0][2];
+  fC[32]+= d0*mB[1][0] + d1*mB[1][1] + d2*mB[1][2];
+  fC[33]+= d0*mB[2][0] + d1*mB[2][1] + d2*mB[2][2];
+  fC[34]+= d0*mB[3][0] + d1*mB[3][1] + d2*mB[3][2];
+  fC[35]+= d0*mB[4][0] + d1*mB[4][1] + d2*mB[4][2];
+  
+  if( noS ){ 
+    fP[7] = 0;
+    fC[28] = fC[29] = fC[30] = fC[31] = fC[32] = fC[33] = fC[34] = fC[35] = 0;
+  } else {
+    float dsdr[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    TransportToDS( fP[7], dsdr );
+    Convert(0);
+  }
+
+  fSFromDecay = 0;
+}
+
 void KFParticleBase::SetMassConstraint( float *mP, float *mC, float mJ[7][7], float mass )
 {
   /** Sets the exact nonlinear mass constraint on the state vector mP with the covariance matrix mC.
@@ -1585,6 +1740,78 @@ void KFParticleBase::Construct( const KFParticleBase* vDaughters[], Int_t nDaugh
 
   if( Mass>=0 ) SetMassConstraint( Mass );
   if( Parent ) SetProductionVertex( *Parent );
+}
+
+void KFParticleBase::Convert( bool ToProduction )
+{
+  //* Tricky function - convert the particle error along its trajectory to 
+  //* the value which corresponds to its production/decay vertex
+  //* It is done by combination of the error of decay length with the position errors
+
+  float fld[3];
+  {
+    GetFieldValue( fP, fld );
+    const float kCLight =  fQ*0.000299792458;
+    fld[0]*=kCLight; fld[1]*=kCLight; fld[2]*=kCLight;
+  }
+
+  float h[6];
+  
+  h[0] = fP[3];
+  h[1] = fP[4];
+  h[2] = fP[5];
+  if( ToProduction ){ h[0]=-h[0]; h[1]=-h[1]; h[2]=-h[2]; } 
+  h[3] = h[1]*fld[2]-h[2]*fld[1];
+  h[4] = h[2]*fld[0]-h[0]*fld[2];
+  h[5] = h[0]*fld[1]-h[1]*fld[0];
+  
+  float c;
+
+  c = fC[28]+h[0]*fC[35];
+  fC[ 0]+= h[0]*(c+fC[28]);
+  fC[28] = c;
+
+  fC[ 1]+= h[1]*fC[28] + h[0]*fC[29];
+  c = fC[29]+h[1]*fC[35];
+  fC[ 2]+= h[1]*(c+fC[29]);
+  fC[29] = c;
+
+  fC[ 3]+= h[2]*fC[28] + h[0]*fC[30];
+  fC[ 4]+= h[2]*fC[29] + h[1]*fC[30];
+  c = fC[30]+h[2]*fC[35];
+  fC[ 5]+= h[2]*(c+fC[30]);
+  fC[30] = c;
+
+  fC[ 6]+= h[3]*fC[28] + h[0]*fC[31];
+  fC[ 7]+= h[3]*fC[29] + h[1]*fC[31];
+  fC[ 8]+= h[3]*fC[30] + h[2]*fC[31];
+  c = fC[31]+h[3]*fC[35];
+  fC[ 9]+= h[3]*(c+fC[31]);
+  fC[31] = c;
+  
+  fC[10]+= h[4]*fC[28] + h[0]*fC[32];
+  fC[11]+= h[4]*fC[29] + h[1]*fC[32];
+  fC[12]+= h[4]*fC[30] + h[2]*fC[32];
+  fC[13]+= h[4]*fC[31] + h[3]*fC[32];
+  c = fC[32]+h[4]*fC[35];
+  fC[14]+= h[4]*(c+fC[32]);
+  fC[32] = c;
+  
+  fC[15]+= h[5]*fC[28] + h[0]*fC[33];
+  fC[16]+= h[5]*fC[29] + h[1]*fC[33];
+  fC[17]+= h[5]*fC[30] + h[2]*fC[33];
+  fC[18]+= h[5]*fC[31] + h[3]*fC[33];
+  fC[19]+= h[5]*fC[32] + h[4]*fC[33];
+  c = fC[33]+h[5]*fC[35];
+  fC[20]+= h[5]*(c+fC[33]);
+  fC[33] = c;
+
+  fC[21]+= h[0]*fC[34];
+  fC[22]+= h[1]*fC[34];
+  fC[23]+= h[2]*fC[34];
+  fC[24]+= h[3]*fC[34];
+  fC[25]+= h[4]*fC[34];
+  fC[26]+= h[5]*fC[34];
 }
 
 void KFParticleBase::TransportToDecayVertex()

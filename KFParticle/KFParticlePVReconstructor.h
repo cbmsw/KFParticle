@@ -95,7 +95,7 @@ class KFParticlePVReconstructor{
   
   KFParticle fBeamLine; ///< Position and direction of the beam line.
   bool fIsBeamLine;     ///< Flag showing if the beam line is set.
-  std::array<float, 3> fTarget = {0.f};
+  std::array<float, 3> fTarget = {{0.f, 0.f, 0.f}};
   
   /** @class KFParticleCluster
    ** @brief A helper structure for reconstruction of a primary vertex.
