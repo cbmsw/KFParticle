@@ -57,7 +57,7 @@ class KFParticleBase :public TObject {
   virtual void GetFieldValue(const float xyz[], float B[]) const = 0;
   
   /** Virtual method to get extrapolation parameter dS=l/p to . Is defined in KFParticle.**/
-  virtual float GetDStoPoint( const float xyz[3], float dsdr[6] ) const = 0;
+  virtual float GetDStoPoint( const float xyz[3], float dsdr[6]) const = 0;
   
   float GetDStoPointLine( const float xyz[3], float dsdr[6] ) const;
   float GetDStoPointBz( float B, const float xyz[3], float dsdr[6], const float* param=0) const;
@@ -178,6 +178,10 @@ class KFParticleBase :public TObject {
 
   void SetProductionVertex( const KFParticleBase &Vtx );
 
+    //* Set exact production vertex 
+
+  void SetExactProductionVertex( const KFParticleBase &Vtx );
+
   //* Set mass constraint 
 
   void SetNonlinearMassConstraint( float Mass );
@@ -192,10 +196,11 @@ class KFParticleBase :public TObject {
 
   void Construct( const KFParticleBase *vDaughters[], Int_t nDaughters, const KFParticleBase *ProdVtx=0,   float Mass=-1 );
 
+  void Convert( bool ToProduction );
   //Transport functions
   void TransportToDecayVertex();
   void TransportToProductionVertex();
-  void TransportToDS( float dS, const float* dsdr );
+  void TransportToDS( float dS, const float* dsdr);
   void TransportBz( float Bz, float dS, const float* dsdr, float P[], float C[], float* dsdr1=0, float* F=0, float* F1=0 ) const;
   void TransportCBM( float dS, const float* dsdr, float P[], float C[], float* dsdr1=0, float* F=0, float* F1=0 ) const;  
 
